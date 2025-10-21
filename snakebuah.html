@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🐍 Snake Buah 🍎</title>
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #eafaf2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .container {
+    text-align: center;
+    border: 4px solid #3a5a40;
+    border-radius: 20px;
+    padding: 30px;
+    background: #f0fff4;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+  }
+
+  h1, h2 {
+    color: #3a5a40;
+  }
+
+  button {
+    background-color: #4a3200;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  button:hover {
+    background-color: #725b2a;
+  }
+
+  #gameBoard {
+    display: none;
+    border: 5px solid #003c71;
+    border-radius: 15px;
+    background-color: #bde0fe;
+    margin: 20px auto;
+  }
+
+  canvas {
+    background-color: transparent;
+    display: block;
+    margin: 0 auto;
+  }
+
+  #info {
+    font-weight: bold;
+  }
+
+  footer {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #2f3e46;
+  }
+
+  .hidden {
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div id="welcome" class="container">
+  <h1>🐍 Welcome My Game 🍎</h1>
+  <button onclick="showLevel()">Start</button>
+  <footer>Created by <b>M ALPA HADIANSAH</b><br>SMA PLUS SIROJUSSYAFI'IYYAH</footer>
+</div>
+
+<div id="level" class="container hidden">
+  <h2>Pilih Tingkat Kesulitan</h2>
+  <button onclick="startGame('easy')">Mudah 🍏</button>
+  <button onclick="startGame('medium')">Sedang 🍊</button>
+  <button onclick="startGame('hard')">Sulit 🍉</button>
+  <footer>Created by <b>M ALPA HADIANSAH</b><br>SMA PLUS SIROJUSSYAFI'IYYAH</footer>
+</div>
+
+<div id="gameContainer" class="container hidden">
+  <h2>🐍 Snake Buah 🍎</h2>
+  <canvas id="gameBoard" width="400" height="400"></canvas>
+  <div id="info"></div>
+  <div id="gameOver" class="hidden">
+    <h3 id="scoreDisplay"></h3>
+    <button onclick="restartGame()">Ulangi Game 🔄</button>
+    <button onclick="backToLevel()">Kembali ke Menu Level ⬅️</button>
+  </div>
+  <footer>Created by <b>M ALPA HADIANSAH</b><br>SMA PLUS SIROJUSSYAFI'IYYAH</footer>
+</div>
+
+<script>
+  const welcome = document.getElementById("welcome");
+  const level = document.getElementById("level");
+  const gameContainer = document.getElementById("gameContainer");
+  const canvas = document.getElementById("gameBoard");
+  const ctx = canvas.getContext("2d");
+  const info = document.getElementById("info");
+  const gameOverDiv = document.getElementById("gameOver");
+  const scoreDisplay = document.getElementById("scoreDisplay");
+
+  let snake, food, direction, speed, gameInterval, score, levelDifficulty, obstacles = [];
+  let fruitEmoji = "🍎";
+
+  const fruits = ["🍎", "🍌", "🍓", "🍇", "🍉", "🍍", "🍒", "🍋", "🥝", "🍊"];
+
+  function randomFruit() {
+    return fruits[Math.floor(Math.random() * fruits.length)];
+  }
+
+  function showLevel() {
+    welcome.classList.add("hidden");
+    level.classList.remove("hidden");
+  }
+
+  function backToLevel() {
+    clearInterval(gameInterval);
+    gameContainer.classList.add("hidden");
+    level.classList.remove("hidden");
+  }
+
+  function startGame(difficulty) {
+    levelDifficulty = difficulty;
+    level.classList.add("hidden");
+    gameContainer.classList.remove("hidden");
+    canvas.style.display = "block";
+    initGame();
+  }
+
+  function initGame() {
+    snake = [{ x: 10, y: 10 }];
+    food = randomPosition();
+    fruitEmoji = randomFruit();
+    direction = "right";
+    score = 0;
+    obstacles = generateObstacles(levelDifficulty);
+    speed = levelDifficulty === "easy" ? 200 : levelDifficulty === "medium" ? 150 : 100;
+    gameOverDiv.classList.add("hidden");
+    info.textContent = "Skor: " + score;
+    clearInterval(gameInterval);
+    gameInterval = setInterval(updateGame, speed);
+  }
+
+  function randomPosition() {
+    return { x: Math.floor(Math.random() * 20), y: Math.floor(Math.random() * 20) };
+  }
+
+  function generateObstacles(level) {
+    let obs = [];
+    let num = level === "easy" ? 5 : level === "medium" ? 10 : 20;
+    for (let i = 0; i < num; i++) {
+      obs.push(randomPosition());
+    }
+    return obs;
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowUp" && direction !== "down") direction = "up";
+    if (e.key === "ArrowDown" && direction !== "up") direction = "down";
+    if (e.key === "ArrowLeft" && direction !== "right") direction = "left";
+    if (e.key === "ArrowRight" && direction !== "left") direction = "right";
+  });
+
+  function updateGame() {
+    const head = { ...snake[0] };
+    if (direction === "up") head.y--;
+    if (direction === "down") head.y++;
+    if (direction === "left") head.x--;
+    if (direction === "right") head.x++;
+
+    if (
+      head.x < 0 || head.x >= 20 ||
+      head.y < 0 || head.y >= 20 ||
+      snake.some(s => s.x === head.x && s.y === head.y) ||
+      obstacles.some(o => o.x === head.x && o.y === head.y)
+    ) {
+      return endGame();
+    }
+
+    snake.unshift(head);
+
+    if (head.x === food.x && head.y === food.y) {
+      score++;
+      food = randomPosition();
+      fruitEmoji = randomFruit(); // buah baru tiap makan
+      if (score % 10 === 0) obstacles.push(...generateObstacles(levelDifficulty));
+    } else {
+      snake.pop();
+    }
+
+    drawGame();
+  }
+
+  function drawGame() {
+    const tileSize = 20;
+    const cols = canvas.width / tileSize;
+    const rows = canvas.height / tileSize;
+
+    // Latar kotak-kotak halus
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        ctx.fillStyle = (x + y) % 2 === 0 ? "#90e0ef" : "#ade8f4";
+        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+      }
+    }
+
+    // Ular
+    ctx.fillStyle = "#8b5a2b";
+    snake.forEach(s => {
+      ctx.fillRect(s.x * tileSize, s.y * tileSize, tileSize - 2, tileSize - 2);
+    });
+
+    // Buah emoji
+    ctx.font = "18px serif";
+    ctx.fillText(fruitEmoji, food.x * tileSize + 2, food.y * tileSize + 17);
+
+    // Rintangan
+    ctx.fillStyle = "#001219";
+    obstacles.forEach(o => {
+      ctx.fillRect(o.x * tileSize, o.y * tileSize, tileSize - 2, tileSize - 2);
+    });
+
+    info.textContent = "Skor: " + score;
+  }
+
+  function endGame() {
+    clearInterval(gameInterval);
+    gameOverDiv.classList.remove("hidden");
+    scoreDisplay.textContent = "💀 Game Over! Skor kamu: " + score;
+  }
+
+  function restartGame() {
+    initGame();
+  }
+</script>
+</body>
+</html>
